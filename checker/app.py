@@ -56,7 +56,7 @@ class PeerCertificate():
 
         except ValueError as e:
             logger.debug(e)
-            raise PeerCertificateException(f"Error pasring attribute 'notAfter' from certificate into datetime")
+            raise PeerCertificateException(f"Error parsing attribute 'notAfter' from certificate into datetime")
 
         return False
 
