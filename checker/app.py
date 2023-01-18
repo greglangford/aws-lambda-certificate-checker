@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 def lambda_handler(event, context):
-    hostname = 'python.org'
+    hostname = '1.2.3.4'
     port = 443
     expiry_days = 14
 
@@ -18,9 +18,8 @@ def lambda_handler(event, context):
         if certificate.match_hostname():
             logger.info(f"Certificate matches the hostname {hostname}")
 
-        if not certificate.is_expiring(14):
+        if not certificate.is_expiring(days=expiry_days):
             logger.info(f"Certificate for hostname {hostname} is not due to expire within {expiry_days} days")
-
     except PeerCertificateException as e:
         logger.error(e)
 
@@ -34,18 +33,20 @@ class PeerCertificate():
             context = ssl.create_default_context()
             context.check_hostname = False
 
-            with socket.create_connection((self.hostname, self.port)) as sock:
+            with socket.create_connection((self.hostname, self.port), timeout=30) as sock:
                 with context.wrap_socket(sock, server_hostname=self.hostname) as ssock:
                     certificate = ssock.getpeercert()
 
                     if certificate:
                         self.certificate = certificate
 
+        except socket.timeout:
+            raise PeerCertificateException(f"Time out connecting to {hostname} on port {port}")
         except ssl.SSLError as e:
             logger.debug(e)
             raise PeerCertificateException(f"No certificate found for hostname {hostname} on port {port}")
 
-    def is_expiring(self, days):
+    def is_expiring(self, days=14):
         """Raise a PeerCertificateException if certificate is expiring within 'days' or return False"""
         try:
             expiry_date = datetime.datetime.strptime(self.certificate['notAfter'], '%b %d %H:%M:%S %Y %Z')
