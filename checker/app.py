@@ -46,6 +46,11 @@ class PeerCertificate():
             logger.debug(e)
             raise PeerCertificateException(f"No certificate found for host {host} on port {port}")
 
+    def days_until_expiry(self):
+        """Returns the number of days until the certificate expiry date"""
+        # TODO: Create funcion which will return the days until expiry, this could eventually be used as a CloudWatch metric
+        pass
+
     def is_expiring(self, days=14):
         """Raise a PeerCertificateException if certificate is expiring within 'days' or return False"""
         try:
