@@ -44,7 +44,6 @@ class PeerCertificate():
         except socket.error as e:
             raise PeerCertificateException(f"Socket error: {e}")
         except ssl.SSLError as e:
-            logger.debug(e)
             raise PeerCertificateException(f"SSL error: {e}")
 
     def days_until_expiry(self):
