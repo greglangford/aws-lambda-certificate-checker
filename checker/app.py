@@ -1,3 +1,4 @@
+import os
 import ssl
 import socket
 import logging
@@ -8,7 +9,7 @@ logger.setLevel(logging.INFO)
 
 def lambda_handler(event, context):
     host = 'greglangford.co.uk'
-    port = 443
+    port = 80
     expiry_days = 14
 
     try:
@@ -24,7 +25,7 @@ def lambda_handler(event, context):
         logger.error(e)
 
 class PeerCertificate():
-    def __init__(self, host, port):
+    def __init__(self, host, port, socket_timeout=30):
         
         self.host = host
         self.port = port
@@ -33,18 +34,18 @@ class PeerCertificate():
             context = ssl.create_default_context()
             context.check_host = False
 
-            with socket.create_connection((self.host, self.port), timeout=30) as sock:
+            with socket.create_connection((self.host, self.port), timeout=socket_timeout) as sock:
                 with context.wrap_socket(sock, server_hostname=self.host) as ssock:
                     certificate = ssock.getpeercert()
 
                     if certificate:
                         self.certificate = certificate
 
-        except socket.timeout:
-            raise PeerCertificateException(f"Timeout connecting to {host} on port {port}")
+        except socket.error as e:
+            raise PeerCertificateException(f"Socket error: {e}")
         except ssl.SSLError as e:
             logger.debug(e)
-            raise PeerCertificateException(f"No certificate found for host {host} on port {port}")
+            raise PeerCertificateException(f"SSL error: {e}")
 
     def days_until_expiry(self):
         """Returns the number of days until the certificate expiry date"""
@@ -62,7 +63,7 @@ class PeerCertificate():
 
         except ValueError as e:
             logger.debug(e)
-            raise PeerCertificateException(f"Error parsing attribute 'notAfter' from certificate into datetime")
+            raise PeerCertificateException("Error parsing attribute 'notAfter' from certificate into datetime")
 
         return False
 
