@@ -1,28 +1,19 @@
+import os
 import ssl
 import socket
 import logging
 import datetime
+import boto3
+import yaml
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 def lambda_handler(event, context):
     EXPIRY_DAYS = 14
+    CONFIG_PARAMETER_NAME = os.getenv('CONFIG_PARAMETER_NAME', 'ssl_hostnames')
 
-    hosts = [
-        {
-            'host': 'python.org',
-            'port': 443
-        },
-        {
-            'host': 'linux.org',
-            'port': 443
-        },
-        {
-            'host': '172.67.148.63',
-            'port': 443
-        }
-    ]
+    hosts = yaml.safe_load(get_config(CONFIG_PARAMETER_NAME))
 
     for elem in hosts:
         host = elem['host']
@@ -36,6 +27,20 @@ def lambda_handler(event, context):
                 logger.info(f"Certificate for host {host} on port {port} is not due to expire within {EXPIRY_DAYS} days, expires on {expiry_date}")
         except PeerCertificateException as e:
             logger.error(e)
+
+    return {}
+
+def get_config(parameter_name):
+    client = boto3.client('ssm')
+
+    try:
+        response = client.get_parameter(
+            Name=parameter_name
+        )
+
+        return response['Parameter']['Value']
+    except ValueError as e:
+        raise e
 
 class PeerCertificate():
     def __init__(self, host, port, socket_timeout=30, check_host=True):
