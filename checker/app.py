@@ -31,11 +31,9 @@ def lambda_handler(event, context):
         try:
             certificate = PeerCertificate(host, port)
 
-            #if certificate.match_host():
-            #    logger.info(f"Certificate matches the host {host}")
-
             if not certificate.is_expiring(days=EXPIRY_DAYS):
-                logger.info(f"Certificate for host {host} on port {port} is not due to expire within {EXPIRY_DAYS} days")
+                expiry_date = certificate.expiry_date.strftime('%b %d %H:%M:%S %Y %Z')
+                logger.info(f"Certificate for host {host} on port {port} is not due to expire within {EXPIRY_DAYS} days, expires on {expiry_date}")
         except PeerCertificateException as e:
             logger.error(e)
 
