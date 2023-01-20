@@ -11,7 +11,7 @@ logger.setLevel(logging.INFO)
 
 def lambda_handler(event, context):
     EXPIRY_DAYS = 14
-    CONFIG_PARAMETER_NAME = os.getenv('CONFIG_PARAMETER_NAME', 'ssl_hostnames')
+    CONFIG_PARAMETER_NAME = os.getenv('CONFIG_PARAMETER_NAME', 'certificate_checker_hosts')
 
     hosts = yaml.safe_load(get_config(CONFIG_PARAMETER_NAME))
 
